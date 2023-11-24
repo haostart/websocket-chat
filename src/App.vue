@@ -1,30 +1,26 @@
+<!-- eslint-disable -->
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view />
+  <div id="app">
+    <KeepAlive v-if="$route.meta.KeepAlive">
+      <router-view />
+    </KeepAlive>
+
+    <router-view v-else />
+  </div>
 </template>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+<script>
+import { defineComponent } from "vue";
+import { useRoute } from "vue-router";
 
-nav {
-  padding: 30px;
-}
+export default defineComponent({
+  name: "App",
+  setup() {
+    const route = useRoute();
 
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
-}
-</style>
+    return {
+      $route: route,
+    };
+  },
+});
+</script>
