@@ -1,24 +1,26 @@
 ## 项目说明
 
+
 这是一个基于 WebSocket 实现的简单聊天应用的示例项目。通过该项目，用户可以进行私聊和群聊，实时发送和接收消息。
 ### 注意
- - **非常简陋**
- - 没有使用数据库,服务启动后直接保存在字典列表里(内存中),如下图:
- - 重启服务端自然会清除聊天数据
+ - **简单Demo, 功能不完善**
+ - 使用 Mysql 数据库, 表结构在test_structure.sql文件中,执行命令 `mysql -u your_username -p your_password your_database_name < test_structure.sql` 导入数据库表结构
 
-![远程图片](sample1.png)
+
+
 ### 功能特性
 
 - 私聊功能：用户可以选择联系人进行一对一私聊，发送即时消息。
 - 群聊功能：用户可以加入群组，与群组成员进行群聊。
 - 修改用户名：用户可以在界面上直接修改自己的用户名。
-
+- 显示在线(连接)状态
+- 重新连接: 用户可以重新连接服务器, 重新连接后, 会加载之前的聊天记录
 ### 技术栈
 
 - **前端框架：** 该项目使用 Vue.js 作为前端框架，Element Plus 用于 UI 组件。
-- **WebSocket：** 实时通信使用 WebSocket 技术，保证消息的实时性。
-- **后端：** 后端采用了 WebSocket 服务器，通过 WebSocket 实现前后端实时数据交互。
 
+- **后端框架：** 后端使用 Node.js +  Mysql 实现，使用 WebSocket 库 ws 作为 WebSocket 服务端。
+- **WebSocket：** 实时通信使用 WebSocket 技术，保证消息的实时性。
 ### 如何运行
 
 
@@ -55,6 +57,7 @@
 
 ```
 yourproject/
+|-- server/ # WebSocket 服务端
 |-- src/
 |   |-- components/
 |   |   |-- ...  # Vue 组件
@@ -62,6 +65,8 @@ yourproject/
 |   |   |-- ...  # 静态资源
 |   |-- views/
 |   |   |-- Home.vue  # 主要视图组件
+|   |   |-- Login.vue  # 登录视图组件
+|   |-- router/
 |   |-- App.vue
 |   |-- main.js
 |-- public/
@@ -72,5 +77,5 @@ yourproject/
 ### 注意事项
 
 1. 请确保已经安装 Node.js 和 npm。
-2. 项目中的 WebSocket 连接地址为 `ws://127.0.0.1:9000`，请根据实际情况修改。
+2. 项目中的 WebSocket 连接地址为 `ws://127.0.0.1:9000/ws`，请根据实际情况修改。
 
