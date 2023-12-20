@@ -3,14 +3,20 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon index.js"
+
+    "dev": "nodemon run.js",
+    "test": "nodemon home.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "nodemon": "^2.0.22",
+    "mysql2": "^3.6.5",
     "ws": "^7.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
   <div class="about">
     <h3 style="color: #576c99">
@@ -15,8 +16,15 @@
 </template>
 
 <script>
-const ws = new WebSocket("ws://127.0.0.1:9000");
+import { User, Message, MessageType } from "../assets/entity.js";
+import { inject, ref } from 'vue';
+import { socketManager } from '../assets/socket.js';
+import { onMounted  } from 'vue';
+import { useRouter } from 'vue-router';
+
+const ws = ref(socketManager.getSocket()).value;
 export default {
+
   name: "Login",
   data() {
     return {
@@ -24,18 +32,58 @@ export default {
       username: "",
     };
   },
-  mounted() {
-    const username = localStorage.getItem("username");
-    if (username) {
-      this.$router.push("/");
-      return;
-    }
-    ws.addEventListener("open", this.hanlewsOpen.bind(this), false);
-    ws.addEventListener("close", this.handlewsClose.bind(this), false);
-    ws.addEventListener("error", this.handlewsError.bind(this), false);
-    ws.addEventListener("message", this.handlewsMessage.bind(this), false);
+  setup() {
 
+    const router = useRouter();
+    console.log("------------------");
+    console.log(ws);
+    console.log("------------------");
+    const message = ref(""); // Assuming you are using a ref for message
+
+
+    const handlewsOpen = (e) => {
+      console.log("websocket open 前端连接成功");
+    };
+
+    const handlewsClose = (e) => {
+      console.log("websocket close 前端关闭连接");
+      message.value = "连接关闭，请刷新重试!";
+    };
+
+    const handlewsError = (e) => {
+      console.log("websocket error 前端错误", e);
+      message.value = "连接错误，请刷新重试或者检查网络!";
+    };
+
+    const handlewsMessage = (e) => {
+      let data = JSON.parse(e.data);
+      console.log("websocket message 前端接收", data);
+      if (data.type === MessageType.MESSAGE_LOGIN_SUCCEED) {
+        console.log(MessageType.MESSAGE_LOGIN_SUCCEED);
+        localStorage.setItem("username", data.data.username);
+        localStorage.setItem("uid", data.data.uid);
+        router.push("/");
+      }
+      else{
+        console.log(MessageType.MESSAGE_LOGIN_FAILED);
+        message.value = "用户名已存在，请重新输入!";}
+    };
+
+    onMounted(() => {
+      // const username = localStorage.getItem("username");
+
+      ws.addEventListener("open", handlewsOpen, false);
+      ws.addEventListener("close", handlewsClose, false);
+      ws.addEventListener("error", handlewsError, false);
+      ws.addEventListener("message", handlewsMessage, false);
+    });
+
+    return { ws, message, handlewsOpen, handlewsClose, handlewsError, handlewsMessage };
   },
+
+  // mounted() {
+
+  // },
   methods: {
     handleEnterBtnClick() {
       const username = this.username.trim();
@@ -43,37 +91,25 @@ export default {
         alert("用户名不小于2位");
         return;
       }
-      const uid = new Date().getTime() + Math.floor(Math.random() * 1000);
-      localStorage.setItem("username", username);
-      localStorage.setItem("uid", uid);
+
       ws.send(
         JSON.stringify({
-          type: "login",
+          type: MessageType.MESSAGE_LOGIN,
           data: {
-            uid: uid,
+            // uid: uid,
             username: username,
           },
         })
       );
-      this.$router.push("/chat");
+      console.log("websocket message 前端发送", {
+        type: MessageType.MESSAGE_LOGIN,
+        data: {
+          // uid: uid,
+          username: username,
+        },
+      });
     },
-    hanlewsOpen(e) {
 
-      console.log("websocket open 前端连接成功");
-
-    },
-    handlewsClose(e) {
-      console.log("websocket close 前端关闭连接");
-      this.message = "连接关闭,请刷新重试!";
-    },
-    handlewsError(e) {
-      console.log("websocket error 前端错误", e);
-      this.message = "连接错误,请刷新重试或者检查网络!";
-    },
-    handlewsMessage(e) {
-      let data = JSON.parse(e.data);
-      console.log("websocket message 前端接收", data);
-    },
   },
 };
 </script>

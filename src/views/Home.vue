@@ -9,19 +9,20 @@
                                 <message />
                             </el-icon>联系人
                         </template>
-                        <el-menu-item-group v-for="item in userList" :key="item.id">
-                            <el-menu-item v-if="item.id !== this.uid" :index="String(item.id)" @click="handleSelectUser">{{
-                                item.name }}</el-menu-item>
-                            <!-- <el-menu-item index="1-2">Option 2</el-menu-item> -->
+                        <el-menu-item-group v-for="filteredItem in filteredUserList" :key="filteredItem.uid">
+                            <el-menu-item :index="String(filteredItem.uid)" @click="handleSelectUser" style="height: 40px;">
+                                {{ filteredItem.name }}
+                            </el-menu-item>
                         </el-menu-item-group>
                     </el-sub-menu>
                     <el-sub-menu index="2">
                         <template #title>
                             <el-icon><icon-menu /></el-icon>群组
                         </template>
-                        <el-menu-item-group v-for="item in groupList" :key="item.id">
+                        <el-menu-item-group v-for="item in groupList" :key="item.gid">
                             <!-- <template #title>Group 1</template> -->
-                            <el-menu-item :index="String(item.id)" @click="handleSelectGroup">{{ item.name }}</el-menu-item>
+                            <el-menu-item :index="String(item.gid)" @click="handleSelectGroup">{{ item.name
+                            }}</el-menu-item>
                             <!-- <el-menu-item index="2-2">Option 2</el-menu-item> -->
                         </el-menu-item-group>
                     </el-sub-menu>
@@ -32,6 +33,10 @@
         <el-container>
             <el-header style="text-align: right; font-size: 12px">
                 <div class="toolbar">
+                    <el-text class="mx-1" type="primary" style="margin-right: 10px;">{{ message }}</el-text>
+                    <!-- 重新连接websocket按钮 -->
+                    <ElButton type="primary" style="margin-right: 10px;" @click="reconnect()">重新连接</ElButton>
+
                     <el-dropdown>
                         <el-icon style="margin-right: 10px; margin-top: 1px" size="25px">
                             <setting />
@@ -58,13 +63,15 @@
             </el-header>
 
             <el-main style="margin-top: 1px;">
-                <el-scrollbar class="chat-room" id="chat-room" ref="chatRoom" style="margin-top: 1px">
+                <el-scrollbar class="chat-room" id="chat-room" ref="chatRoom" style="margin-top: 1px" always
+                    >
 
-                    <div v-for="item in MsgList" :key="item.id" style="margin-top: 10px;margin-bottom: 20px;">
+                    <div v-for="item in MsgList" :key="item.mid" ref="innerRef"
+                        style="margin-top: 10px;margin-bottom: 20px;">
                         <!-- 左边 -->
                         <div v-if="uid === item.uid" style="margin-left: 10px;margin-bottom: 8px;">
                             <el-row class="row-bg" type="flex" align="middle">
-                                <el-avatar size="default" fit="fit">{{ item.user }}</el-avatar>
+                                <el-avatar size="default" fit="fit">{{ item.username }}</el-avatar>
                                 <span style="margin-left: 10px">{{ dayjs(item.dateTime).format("YYYY-MM-DD HH:mm") }}</span>
                             </el-row>
 
@@ -80,7 +87,7 @@
                                 <span style="margin-right: 10px">{{ dayjs(item.dateTime).format("YYYY-MM-DD HH:mm")
                                 }}</span>
 
-                                <el-avatar size="default" fit="fit"> {{ item.user }} </el-avatar>
+                                <el-avatar size="default" fit="fit"> {{ item.username }} </el-avatar>
                             </el-row>
 
                             <el-row justify="end">
@@ -92,30 +99,43 @@
                     </div>
 
                 </el-scrollbar>
-                <el-row class="row-bg" type="flex" justify="space-around" align="middle">
-                    <el-col :span="20">
-                        <el-input type="text" style="width: 100%" autofocus @keyup.enter="handleSendBtnClick"
-                            placeholder="请输入消息按Enter发送" v-model="currentMsg"></el-input>
-                    </el-col>
-                    <el-col :span="2">
-                        <el-button class="sendBtn" @click="handleSendBtnClick" type="primary" size="default">
-                            发送
-                        </el-button>
-                    </el-col>
-                </el-row>
+
             </el-main>
+            <el-row class="row-bg" type="flex" justify="space-around" align="middle">
+                <el-col :span="20">
+                    <el-input type="text" style="width: 100%" autofocus @keyup.enter="handleSendBtnClick"
+                        placeholder="请输入消息按Enter发送" v-model="currentMsg"></el-input>
+                </el-col>
+                <el-col :span="2">
+                    <el-button class="sendBtn" @click="handleSendBtnClick" type="primary" size="default">
+                        发送
+                    </el-button>
+                </el-col>
+            </el-row>
         </el-container>
     </el-container>
 </template>
   
 <script>
-// import { getRandomInt } from 'element-plus/es/utils';
-import { ElAvatar, ElDropdown, ElDropdownItem, ElDropdownMenu, ElIcon, ElMenu, ElMenuItem, ElMenuItemGroup, ElScrollbar, ElRow, ElCol } from 'element-plus'
+import { User, MessageType } from "../assets/entity.js";
+import { ElAvatar, ElDropdown, ElDropdownItem, ElDropdownMenu, ElIcon, ElMenu, ElMenuItem, ElMenuItemGroup, ElScrollbar, ElRow, ElCol, ElButton } from 'element-plus'
 import { Menu as IconMenu, Message, Setting } from '@element-plus/icons-vue'
-// const ws = new WebSocket("ws://159.75.18.63:9000");
-const ws = new WebSocket("ws://127.0.0.1:9000");
+import { socketManager } from '../assets/socket.js';
+import { onMounted, ref } from 'vue';
 
+let ws = ref(socketManager.getSocket()).value;
+// const ws = new WebSocket("ws://159.75.18.63:9000");
+// const ws = new WebSocket("ws://127.0.0.1:9000/ws");
 export default {
+    setup() {
+        const innerRef = ref(null);
+        // const ws = ref(socketManager.getSocket()).value;
+
+
+        return {
+            innerRef,
+        };
+    },
     name: "Home",
     components: {
         ElAvatar,
@@ -131,11 +151,13 @@ export default {
         Message,
         Setting,
         ElRow,
-        ElCol
+        ElCol,
+        ElButton
     },
     data() {
         return {
-            type: "groupMsg",
+            max: 0,
+            type: MessageType.MESSAGE_CHAT_GROUP,
             userMsg:
             {
                 id: "",
@@ -171,18 +193,18 @@ export default {
     },
     //watch 中的函数, 给一个变量发送变化的回调函数, 如果变
     mounted() {
-        // this.username = localStorage.getItem("username");
+        this.username = localStorage.getItem("username");
 
         if (!this.username) {
             this.$router.push("/login");
             return;
         }
-        this.uid = localStorage.getItem("uid");
         //transfer uid to numbera
-        this.uid = Number(this.uid);
+
+        this.uid = Number(localStorage.getItem("uid"));
         console.log("this.uid", this.uid);
         console.log("this.username", this.username);
-        ws.addEventListener("open", this.hanlewsOpen.bind(this), false);
+        ws.addEventListener("open", this.handlewsOpen.bind(this), false);
         ws.addEventListener("close", this.handlewsClose.bind(this), false);
         ws.addEventListener("error", this.handlewsError.bind(this), false);
         ws.addEventListener("message", this.handlewsMessage.bind(this), false);
@@ -192,32 +214,108 @@ export default {
         this.chatRoom = this.$refs.chatRoom;
         console.log("this.chatRoom", this.chatRoom);
     },
+    computed: {
+        filteredUserList() {
+            // 使用 computed 属性过滤数组
+            return this.userList.filter(item => item.uid !== this.uid);
+        },
+    },
+    watch: {
 
+        MsgList: {
+            handler() {
+                this.$nextTick(() => {
+                    this.updateMax();
+                    // console.log("this.innerRef", this.innerRef);
+                    this.scrollToBottom();
+                    // console.log("this.chatRoom", this.chatRoom);
+
+                });
+            },
+            deep: true,
+        },
+    },
     methods: {
 
+        reconnect() {
+            // 检查WebSocket状态
+            console.log("socketManager.getSocket().readyState", socketManager.getSocket().readyState);
+            //先关闭之前的连接
+            socketManager.close();
+            console.log("socketManager.getSocket().readyState", socketManager.getSocket().readyState);
+
+            if (socketManager.getSocket().readyState !== WebSocket.OPEN) {
+                socketManager.connect('ws://127.0.0.1:9000/ws');
+            }
+            else {
+                return;
+            }
+            //wait 1 seconds for connection to establish
+            setTimeout(function () {
+                if (socketManager.getSocket().readyState === WebSocket.OPEN) {
+                    console.log("socketManager.getSocket().readyState", socketManager.getSocket().readyState);
+                    //do something with the websocket
+                }
+            }, 1000);
+            ws = ref(socketManager.getSocket()).value;
+            ws.addEventListener("open", this.handlewsOpen.bind(this), false);
+            ws.addEventListener("close", this.handlewsClose.bind(this), false);
+            ws.addEventListener("error", this.handlewsError.bind(this), false);
+            ws.addEventListener("message", this.handlewsMessage.bind(this), false);
+
+
+        },
+        updateMax() {
+            if (this.innerRef) {
+                const arraySize = Object.keys(this.innerRef).length;
+                console.log("Array Size:", arraySize);
+
+                this.max = arraySize * 100 + 1000;
+                // console.log("this.max", this.max);
+            }
+        },
+
+        scrollToBottom() {
+            const chatRoom = this.$refs.chatRoom.$el;
+            const scrollbar = this.$refs.chatRoom;
+            scrollbar.setScrollTop(this.max);
+
+        },
+        get_init_data() {
+            let obj = {
+                type: MessageType.MESSAGE_GET_INIT_DATA,
+                data: {
+                    uid: this.uid,
+                    username: this.username,
+                    dateTime: new Date().getTime(),
+                }
+            };
+            ws.send(JSON.stringify(obj));
+        },
         handleSendBtnClick() {
             const currentMsg = this.currentMsg;
             if (!currentMsg.trim().length) {
                 return;
             }
 
-            if (this.type == "userMsg") {
+            if (this.type == MessageType.MESSAGE_CHAT) {
                 let obj = {
-                    id: new Date().getTime(),
+                    // id: new Date().getTime(),
                     uid: this.uid,
-                    user: this.username,
+                    username: this.username,
                     tid: this.tid,
-                    dateTime: new Date().getTime(),
+                    // dateTime: new Date().getTime(),
                     text: currentMsg,
                 };
                 // 这里必须传递字符串
                 ws.send(
                     JSON.stringify({
-                        type: "userMsg",
+                        type: MessageType.MESSAGE_CHAT,
                         data: obj,
                     }
                     )
                 );
+                console.log("this.MsgList", this.MsgList);
                 this.MsgList.push(obj);
 
                 this.userMsg = {
@@ -229,20 +327,20 @@ export default {
                     text: "",
                 };
             }
-            else if (this.type == "groupMsg") {
+            else if (this.type == MessageType.MESSAGE_CHAT_GROUP) {
                 let obj = {
-                    id: new Date().getTime(),
+                    // id: new Date().getTime(),
                     uid: this.uid,
                     gid: this.gid,
                     gname: this.gname,
-                    user: this.username,
+                    username: this.username,
                     dateTime: new Date().getTime(),
                     text: currentMsg,
                 };
                 // 这里必须传递字符串aaaaaa
                 ws.send(
                     JSON.stringify({
-                        type: "groupMsg",
+                        type: MessageType.MESSAGE_CHAT_GROUP,
                         data: obj,
                     }
                     )
@@ -269,13 +367,13 @@ export default {
             // })a
         },
         handleSelectUser(item) {
-            this.type = "userMsg";
+            this.type = MessageType.MESSAGE_CHAT;
 
             this.tid = Number(item.index);
             console.log(this.type, this.tid);
             // this.id = Number(item.index);
             let obj = {
-                type: "getUserMsgList",
+                type: MessageType.MESSAGE_GET_USER_MESSAGE_LIST,
                 data: {
                     uid: this.uid,
                     tid: this.tid,
@@ -284,37 +382,42 @@ export default {
             ws.send(JSON.stringify(obj));
         },
         handleSelectGroup(item) {
-            this.type = "groupMsg";
+            this.type = MessageType.MESSAGE_CHAT_GROUP;
             console.log(item);
             this.gid = Number(item.index);
             let obj = {
-                type: "getGroupMsgList",
+                type: MessageType.MESSAGE_GET_GROUP_MESSAGE_LIST,
                 data: {
                     uid: this.uid,
                     gid: this.gid,
                 },
             };
+            console.log(obj);
             ws.send(JSON.stringify(obj));
         },
 
 
-        hanlewsOpen(e) {
-
-            console.log("websocket open 前端连接成功");
+        handlewsOpen(e) {
+            this.message = "连接成功";
+            console.log("websocket open 前端handlewsOpen连接成功");
             console.log("ws.uid", ws.uid);
             console.log("ws.username", ws.username);
-            ws.send(
-                JSON.stringify({
-                    type: 'currentUser',
-                    data:
-                    {
-                        uid: this.uid,
-                        username: this.username,
-                        dateTime: new Date().getTime(),
-                    }
+            this.get_init_data();
+            this.handleSelectUser({ index: this.uid })
+            this.handleSelectGroup({ index: this.gid })
+            this.message = "在线中";
+            // ws.send(
+            //     JSON.stringify({
+            //         type: MessageType.MESSAGE_GET_ONLINE_USERS,
+            //         data:
+            //         {
+            //             uid: this.uid,
+            //             username: this.username,
+            //             dateTime: new Date().getTime(),
+            //         }
 
-                })
-            );
+            //     })
+            // );
         },
         handlewsClose(e) {
             console.log("websocket close 前端关闭连接");
@@ -336,24 +439,31 @@ export default {
             let data = JSON.parse(e.data);
             console.log("websocket message 前端接收", data);
             //初始化用户列表和群组列表11aaaaa
-            if (data.type == "init") {
+            if (data.type == MessageType.MESSAGE_GET_INIT_DATA) {
                 this.userList = data.data.userList;
                 this.groupList = data.data.groupList;
-                this.MsgList = data.data.GroupMsgRecordList;
+                // this.MsgList = data.data.GroupMsgRecordList;
             }
-            else if (data.type == "userMsg") {
+            else if (data.type == MessageType.MESSAGE_LOGIN_FAILED) {
+                console.log(MessageType.MESSAGE_LOGIN_FAILED)
+                //jump to login page
+
+                this.$router.push("/login");
+                return;
+            }
+            else if (data.type == MessageType.MESSAGE_CHAT) {
                 this.MsgList.push(data.data);
 
             }
-            else if (data.type == "groupMsg") {
+            else if (data.type == MessageType.MESSAGE_CHAT_GROUP) {
                 this.MsgList.push(data.data);
 
             }
-            else if (data.type == "userMsgList") {
+            else if (data.type == MessageType.MESSAGE_GET_USER_MESSAGE_LIST) {
                 this.MsgList = data.data;
             }
 
-            else if (data.type == "groupMsgList") {
+            else if (data.type == MessageType.MESSAGE_GET_GROUP_MESSAGE_LIST) {
                 this.MsgList = data.data;
 
             }
