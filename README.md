@@ -1,7 +1,7 @@
 ## 项目说明
 
 
-这是一个基于 WebSocket 实现的简单聊天应用的示例项目。通过该项目，用户可以进行私聊和群聊，实时发送和接收消息。
+这是一个基于 WebSocket 实现的简单网页聊天应用的示例项目。通过该项目，用户可以进行私聊和群聊，实时发送和接收消息。
 ### 注意
  - **简单Demo, 功能不完善**
  - 使用 Mysql 数据库, 表结构在test_structure.sql文件中,执行命令 `mysql -u your_username -p your_password your_database_name < test_structure.sql` 导入数据库表结构
