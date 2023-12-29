@@ -2,7 +2,7 @@
 <template>
   <div class="about">
     <h3 style="color: #576c99">
-      欢迎来到在线聊天系统!请输入用户名点击进入聊天室
+      欢迎来到在线聊天系统!请输入用户名
     </h3>
     <van-row type="flex" justify="center">
       <van-col span="6"></van-col>
@@ -30,6 +30,7 @@ export default {
     return {
       uid: "",
       username: "",
+      sessionID: "",
     };
   },
   setup() {
@@ -38,11 +39,12 @@ export default {
     console.log("------------------");
     console.log(ws);
     console.log("------------------");
-    const message = ref(""); // Assuming you are using a ref for message
+    const message = ref(""); 
 
 
     const handlewsOpen = (e) => {
       console.log("websocket open 前端连接成功");
+
     };
 
     const handlewsClose = (e) => {
@@ -62,6 +64,7 @@ export default {
         console.log(MessageType.MESSAGE_LOGIN_SUCCEED);
         localStorage.setItem("username", data.data.username);
         localStorage.setItem("uid", data.data.uid);
+        localStorage.setItem("sessionID", data.data.sessionID);
         router.push("/");
       }
       else{
@@ -76,14 +79,15 @@ export default {
       ws.addEventListener("close", handlewsClose, false);
       ws.addEventListener("error", handlewsError, false);
       ws.addEventListener("message", handlewsMessage, false);
+
     });
 
     return { ws, message, handlewsOpen, handlewsClose, handlewsError, handlewsMessage };
   },
 
-  // mounted() {
-
-  // },
+  mounted() {
+    this.check();
+  },
   methods: {
     handleEnterBtnClick() {
       const username = this.username.trim();
@@ -109,6 +113,30 @@ export default {
         },
       });
     },
+    check(){
+      this.sessionID = localStorage.getItem("sessionID");
+      if(this.sessionID){
+        console.log("1111")
+        ws.send(
+          JSON.stringify({
+            type: MessageType.MESSAGE_LOGIN,
+            data: {
+              sessionID: this.sessionID,
+            },
+          })
+        );
+        console.log("websocket message 前端发送", {
+          type: MessageType.MESSAGE_LOGIN,
+          data: {
+            // uid: uid,
+            sessionID: this.sessionID,
+          },
+        });
+      }
+      else{
+        console.log("2222")
+      }
+    }
 
   },
 };

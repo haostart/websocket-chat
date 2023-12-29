@@ -72,7 +72,7 @@
                         <div v-if="uid === item.uid" style="margin-left: 10px;margin-bottom: 8px;">
                             <el-row class="row-bg" type="flex" align="middle">
                                 <el-avatar size="default" fit="fit">{{ item.username }}</el-avatar>
-                                <span style="margin-left: 10px">{{ dayjs(item.dateTime).format("YYYY-MM-DD HH:mm") }}</span>
+                                <span style="margin-left: 10px">{{ dayjs(item.time).format("YYYY-MM-DD HH:mm") }}</span>
                             </el-row>
 
                             <el-row>
@@ -84,7 +84,7 @@
                         <!-- 右边 -->
                         <div v-else style="margin-right: 10px;margin-bottom: 8px;">
                             <el-row class="row-bg" type="flex" justify="end" align="middle">
-                                <span style="margin-right: 10px">{{ dayjs(item.dateTime).format("YYYY-MM-DD HH:mm")
+                                <span style="margin-right: 10px">{{ dayjs(item.time).format("YYYY-MM-DD HH:mm")
                                 }}</span>
 
                                 <el-avatar size="default" fit="fit"> {{ item.username }} </el-avatar>
@@ -238,12 +238,9 @@ export default {
     methods: {
 
         reconnect() {
-            // 检查WebSocket状态
-            console.log("socketManager.getSocket().readyState", socketManager.getSocket().readyState);
             //先关闭之前的连接
             socketManager.close();
             console.log("socketManager.getSocket().readyState", socketManager.getSocket().readyState);
-
             if (socketManager.getSocket().readyState !== WebSocket.OPEN) {
                 socketManager.connect('ws://127.0.0.1:9000/ws');
             }
@@ -276,7 +273,6 @@ export default {
         },
 
         scrollToBottom() {
-            const chatRoom = this.$refs.chatRoom.$el;
             const scrollbar = this.$refs.chatRoom;
             scrollbar.setScrollTop(this.max);
 
@@ -300,14 +296,11 @@ export default {
 
             if (this.type == MessageType.MESSAGE_CHAT) {
                 let obj = {
-                    // id: new Date().getTime(),
                     uid: this.uid,
                     username: this.username,
                     tid: this.tid,
-                    // dateTime: new Date().getTime(),
                     text: currentMsg,
                 };
-                // 这里必须传递字符串
                 ws.send(
                     JSON.stringify({
                         type: MessageType.MESSAGE_CHAT,
@@ -329,7 +322,6 @@ export default {
             }
             else if (this.type == MessageType.MESSAGE_CHAT_GROUP) {
                 let obj = {
-                    // id: new Date().getTime(),
                     uid: this.uid,
                     gid: this.gid,
                     gname: this.gname,
@@ -438,16 +430,13 @@ export default {
 
             let data = JSON.parse(e.data);
             console.log("websocket message 前端接收", data);
-            //初始化用户列表和群组列表11aaaaa
+            //初始化用户列表和群组列表
             if (data.type == MessageType.MESSAGE_GET_INIT_DATA) {
                 this.userList = data.data.userList;
                 this.groupList = data.data.groupList;
-                // this.MsgList = data.data.GroupMsgRecordList;
             }
             else if (data.type == MessageType.MESSAGE_LOGIN_FAILED) {
                 console.log(MessageType.MESSAGE_LOGIN_FAILED)
-                //jump to login page
-
                 this.$router.push("/login");
                 return;
             }

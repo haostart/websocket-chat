@@ -1,4 +1,3 @@
-// const mysql = require('mysql2');
 import mysql2 from 'mysql2'
 const mysql = mysql2;
 class DataBaseManager {
@@ -7,11 +6,10 @@ class DataBaseManager {
         this.connectDatabase();
 
     }
-
     connectDatabase() {
         try {
             this.conn = mysql.createConnection({
-                host: '172.30.42.161',
+                host: '172.30.45.148',
                 user: 'haostart',
                 password: 'haostart',
                 database: 'test'
@@ -36,21 +34,6 @@ class UserTable extends DataBaseManager {
     constructor() {
         super();
     }
-
-    // async createTable() {
-    //     const sql = "CREATE TABLE IF NOT EXISTS USER " +
-    //         "(uid INTEGER not NULL AUTO_INCREMENT, " +
-    //         " name VARCHAR(255), " +
-    //         " password VARCHAR(255), " +
-    //         " PRIMARY KEY ( uid ))";
-
-    //     try {
-    //         const [rows, fields] = (await this.conn).execute(sql);
-    //         console.log('User table created:', rows);
-    //     } catch (error) {
-    //         console.error('Error creating user table:', error.message);
-    //     }
-    // }
     async get_uid(name) {
         const sql = "SELECT uid FROM USER WHERE name = ?";
         const values = [name];
@@ -312,7 +295,7 @@ class MessageTable extends DataBaseManager {
         });
     }
     async get_user_msg(s_uid, r_uid) {
-        const sql = "SELECT UMESSAGE.s_uid AS uid, UMESSAGE.r_uid AS tid,UMESSAGE.text AS text, USER.name AS username " +
+        const sql = "SELECT UMESSAGE.s_uid AS uid, UMESSAGE.r_uid AS tid,UMESSAGE.text AS text, USER.name AS username, UMESSAGE.time AS time " +
             "FROM UMESSAGE " +
             "JOIN USER ON UMESSAGE.s_uid = USER.uid " +
             "WHERE UMESSAGE.s_uid = ? AND UMESSAGE.r_uid = ? " +

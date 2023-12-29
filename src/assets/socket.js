@@ -34,10 +34,7 @@ class SocketManager {
 
 const socketManager = new SocketManager();
 socketManager.connect('ws://127.0.0.1:9000/ws'); // Replace with the actual WebSocket URL
-// provide('socketManager', socketManager);
-// export const provideSocket = () => {
-//   socketManager.connect('ws://127.0.0.1:9000/ws'); // Replace with the actual WebSocket URL
-//   return { socketManager };
-// };
+
 console.log('socketManager', socketManager);
 export { socketManager };
+
